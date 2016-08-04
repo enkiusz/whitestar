@@ -1,0 +1,4 @@
+Match User archive
+     KbdInteractiveAuthentication no
+     PermitTTY no
+     ForceCommand internal-sftp

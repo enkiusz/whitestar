@@ -1,0 +1,12 @@
+[Unit]
+Description=Gathered data archiver
+RequiresMountsFor=/var/log/kismet /var/log/archive
+After=kismet-server.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/archive-kismet-data.sh
+
+[Install]
+WantedBy=multi-user.target
+

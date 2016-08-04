@@ -1,0 +1,7 @@
+#!/bin/sh
+
+for dev in /sys/class/net/*; do
+	kismet_uuid=$(udevadm info -q property -p "$dev" | awk -F = '/KISMET_UUID=/ { print $2; }')
+	[ -z "$kismet_uuid" ] && continue
+	kismet-add-source $(basename "$dev"):uuid=$kismet_uuid
+done

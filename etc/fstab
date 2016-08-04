@@ -1,0 +1,2 @@
+UUID="<UUID1>"	none		swap	sw,nofail			0	0
+UUID="<UUID2>"	/var/log	auto	defaults,relatime,nofail	0	0

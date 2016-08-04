@@ -1,0 +1,12 @@
+[Unit]
+Description=Kismet server
+RequiresMountsFor=/var/log/kismet
+
+[Service]
+ExecStart=/usr/bin/kismet_server -s
+ExecStartPost=/usr/local/bin/kismet-add-all-sources
+Restart=on-abnormal
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+while [ "$1" ]; do
+	SOURCE="$1"; shift
+	logger "Adding kismet source '$SOURCE'"
+	echo "!1 ADDSOURCE $SOURCE" > /dev/tcp/localhost/2501
+done

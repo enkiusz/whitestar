@@ -1,0 +1,2 @@
+SUBSYSTEM=="net", ACTION=="add", ENV{KISMET_UUID}=="?*", RUN+="/usr/local/bin/kismet-add-source $name:uuid=$env{KISMET_UUID}"
+SUBSYSTEM=="net", ACTION=="remove", ENV{KISMET_UUID}=="?*", RUN+="/usr/local/bin/kismet-remove-source $env{KISMET_UUID}"

@@ -1,0 +1,13 @@
+[Unit]
+Description=OBD GPS logger
+RequiresMountsFor=/var/log/obdgpslogger
+Requires=dev-obd.device
+
+[Service]
+ExecStart=/usr/bin/obdgpslogger -s /dev/obd -b 38400 -t -l /var/log/obdgpslogger/serial.log -d /var/log/obdgpslogger/db -i temp,rpm,vss,maf,throttle -u /var/log/obdgpslogger/out.log
+Restart=on-abnormal
+
+[Install]
+WantedBy=multi-user.target
+
+ 

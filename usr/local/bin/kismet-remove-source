@@ -1,0 +1,7 @@
+#!/bin/bash
+
+while [ "$1" ]; do
+	UUID="$1"; shift
+	logger "Removing kismet source UUID '$UUID'"
+	echo "!1 DELSOURCE $UUID" > /dev/tcp/localhost/2501
+done

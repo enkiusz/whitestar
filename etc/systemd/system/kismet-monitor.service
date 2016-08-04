@@ -1,0 +1,14 @@
+[Unit]
+Description=Kismet monitor
+
+[Service]
+ExecStart=/usr/bin/kismet_client
+User=enki
+Group=enki
+Restart=always
+RestartSec=10
+StandardOutput=tty
+TTYPath=/dev/tty1
+
+[Install]
+WantedBy=basic.target

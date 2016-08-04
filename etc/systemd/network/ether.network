@@ -1,0 +1,5 @@
+[Match]
+MACAddress=e0:cb:4e:2e:2b:70
+
+[Network]
+Description=Local Ethernet network
