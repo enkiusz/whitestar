@@ -13,6 +13,10 @@ mon = open(led_device, "w")
 # Reference: http://pop.fsck.pl/hardware/random-led-board/
 def makepkt(**leds):
 
+    print("LED packet: led1='%s' led2='%s' led3='%s' led4='%s', led5='%s' led6='%s' led7='%s' led8='%s' led9='%s'" %
+           (leds.get('led1', ''), leds.get('led2', ''), leds.get('led3', ''), leds.get('led4',''), leds.get('led5', ''),
+           leds.get('led6', ''), leds.get('led7', ''), leds.get('led8', ''), leds.get('led9', '')) )
+
     byte1=0b00000000
     byte2=0b01000000
     byte3=0b10000000
@@ -103,6 +107,7 @@ def update_time(client,timesec):
     global kismet_lastseen
 
     kismet_lastseen = int(timesec)
+    print("TIME time='%d'" % (kismet_lastseen))
 
 def kismet_connection_state():
     if time.time() - kismet_lastseen < 5:
@@ -133,6 +138,7 @@ def update_gps_state(client,fix):
 	gps_fix = 'yellow'
     else:
 	gps_fix = ''
+	print("GPS fix='%d'" % (fix))
 
 class MonitorClient(threading.Thread):
 
