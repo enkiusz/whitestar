@@ -3,10 +3,10 @@
 readonly TAG=$(date -Is --utc)
 readonly BACKUP_DESTDIR=/var/log/archive
 readonly BACKUP_TARBALL="$BACKUP_DESTDIR/kismet-$TAG.tar"
+readonly ARCHIVE_DIRS="/var/log/kismet/whitestar*"
 
-echo "Archiving logs from '$SRCDIR' to '$BACKUP_TARBALL'"
+echo "Archiving logs from '$ARCHIVE_DIRS' to '$BACKUP_TARBALL'"
 
-readonly ARCHIVE_DIRS="/var/log/kismet"
 
 # Reference: http://www.alecjacobson.com/weblog/?p=141
 # Some changes to make it print the longest common prefix instead of removing it
@@ -36,4 +36,5 @@ get_exclude_pattern() {
 
 # Kill the spurious 'file changes as we read it' message on /var/log/kismet
 # Reference: http://stackoverflow.com/questions/20318852/tar-file-changed-as-we-read-it#24012292
-tar --remove-files --warning=no-file-changed --force-local -cf "$BACKUP_TARBALL" --exclude=$(get_exclude_pattern) $ARCHIVE_DIRS
+exlude_pattern=$(get_exclude_pattern)
+tar --remove-files --warning=no-file-changed --force-local -cf "$BACKUP_TARBALL" ${exclude_pattern:+--exclude=${exclude_pattern}*} $ARCHIVE_DIRS
