@@ -1,0 +1,12 @@
+/dev/modem
+115200
+debug
+maxfail 0
+persist
+noauth
+noipdefault
+defaultroute
+usepeerdns
+user darmowy 
+password darmowy
+connect '/usr/sbin/chat -v -t 50 -f /etc/chatscripts/aero2'
