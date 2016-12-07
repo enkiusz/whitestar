@@ -36,5 +36,5 @@ get_exclude_pattern() {
 
 # Kill the spurious 'file changes as we read it' message on /var/log/kismet
 # Reference: http://stackoverflow.com/questions/20318852/tar-file-changed-as-we-read-it#24012292
-exlude_pattern=$(get_exclude_pattern)
-tar --remove-files --warning=no-file-changed --force-local -cf "$BACKUP_TARBALL" ${exclude_pattern:+--exclude=${exclude_pattern}*} $ARCHIVE_DIRS
+exclude_pattern=$(get_exclude_pattern)
+tar --remove-files --warning=no-file-changed --force-local -cf "$BACKUP_TARBALL" ${exclude_pattern:+--exclude=${exclude_pattern}} $ARCHIVE_DIRS
