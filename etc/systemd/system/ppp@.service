@@ -1,0 +1,10 @@
+[Unit]
+Description=PPP connection to %I
+Requires=dev-modem.device
+
+[Service]
+ExecStart=/usr/sbin/pppd nodetach call %I
+
+[Install]
+WantedBy=multi-user.target
+
