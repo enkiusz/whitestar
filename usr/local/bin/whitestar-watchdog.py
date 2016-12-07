@@ -1,14 +1,31 @@
 #!/usr/bin/env python2
 
-import sys, time, subprocess, threading
+import os, sys, time, subprocess, threading
 from struct import pack
-import kismetclient
+import kismetclient, netifaces, requests
 
 led_device='/dev/serial/by-id/pci-FTDI_USB__-__Serial-if00-port0'
+ppp_iface = 'ppp0'
+ovpn_iface = 'tun.bukavpn'
+uplink_usb_id = '1199:68a3'
+storage_usb_id = '152d:2336'
+external_url = 'http://httpbin.org/ip'
+
+## Collector monitoring parameters
+# This IP address is pinged to establish connectivity to the collector
+collector_ip = '172.20.171.116'
+collector_ping_count = 3
+collector_ping_deadline = 10
+
+
+# Don't buffer standard output.
+# http://stackoverflow.com/questions/107705/disable-output-buffering
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 print("Using monitor '%s'" % (led_device))
 
-mon = open(led_device, "w")
+mon = open(led_device, "r+")
+running = True
 
 # Reference: http://pop.fsck.pl/hardware/random-led-board/
 def makepkt(**leds):
@@ -52,20 +69,20 @@ def makepkt(**leds):
 
 def onoff_blink_next(state):
     if state == '':
-	return 'yellow'
+	    return 'yellow'
     else:
-	return ''
+	    return ''
 
 def storage_state():
     # Check if USB device is present
     try:
-	rv = subprocess.call(['lsusb', '-d', '152d:2336'], stdout=open('/dev/null','w'))
-	if rv == 0:
-	    return 'green'
-	else:
-	    return ''
+        rv = subprocess.call(['lsusb', '-d', storage_usb_id], stdout=open('/dev/null','w'))
+        if rv == 0:
+            return 'green'
+        else:
+            return ''
     except:
-	return ''
+        return ''
 
 kismet_server = 'localhost'
 kismet_port = 2501
@@ -96,24 +113,23 @@ def purge_sources():
 
 def update_source_state(client,uuid,error):
     if uuid in sources:
-	sources[uuid]['lastseen'] = time.time()
-	if error == 0:
-		sources[uuid]['state'] = 'green'
-	else:
-		sources[uuid]['state'] = 'yellow'
+        sources[uuid]['lastseen'] = time.time()
+    if error == 0:
+        sources[uuid]['state'] = 'green'
+    else:
+        sources[uuid]['state'] = 'yellow'
 
 kismet_lastseen = 0
 def update_time(client,timesec):
     global kismet_lastseen
-
     kismet_lastseen = int(timesec)
     print("TIME time='%d'" % (kismet_lastseen))
 
 def kismet_connection_state():
     if time.time() - kismet_lastseen < 5:
-	return 'green'
+	    return 'green'
     else:
-	return ''
+	    return ''
 
 def log_status(client,text,flags):
     print("STATUS flags='%s' text='%s'" % (flags, text))
@@ -133,61 +149,113 @@ def update_gps_state(client,fix):
 
     fix=int(fix)
     if fix == 3:
-	gps_fix = 'green'
+        gps_fix = 'green'
     elif fix > 0:
-	gps_fix = 'yellow'
+        gps_fix = 'yellow'
     else:
-	gps_fix = ''
-	print("GPS fix='%d'" % (fix))
+        gps_fix = ''
+        print("GPS fix='%d'" % (fix))
 
-class MonitorClient(threading.Thread):
+uplink_state = ''
+class UplinkMonitor(threading.Thread):
 
     def run(self):
-	global running
-	while True:
-	    try:
-		print("Connecting to kismet server on '%s:%d'" % (kismet_server, kismet_port))
+        global running, uplink_state
+        while running:
 
-		k = kismetclient.Client((kismet_server, kismet_port))
+            rv = subprocess.call(['lsusb', '-d', uplink_usb_id], stdout=open('/dev/null','w'))
+            if rv != 0:
+                print("Uplink USB device '%s' not connected" % (uplink_usb_id))
+                uplink_state = ''
+		time.sleep(10)
+                continue
 
-		k.register_handler('TIME', update_time)
-		k.register_handler('GPS', update_gps_state)
-		k.register_handler('SOURCE', update_source_state)
-		# Debugging
-		k.register_handler('STATUS', log_status)
-		k.register_handler('CRITFAIL', log_critfail)
-		k.register_handler('ERROR', log_error)
-		k.register_handler('TERMINATE', log_terminate)
-		while True:
-	    	    k.listen()
-	    except Exception as e:
-		print("Caught exception in kismet monitor thread: %s" % (e))
-		running = False # Break main loop
-		return
+            ifaces = netifaces.interfaces()
+            # print("Detected network interface names: '%s'" % (' '.join(ifaces)))
+            if not ppp_iface in ifaces:
+                print("PPP iface '%s' not present" % (ppp_iface))
+                uplink_stage = ''
+		time.sleep(10)
+                continue
 
-t = MonitorClient()
-t.start()
+            try:
+                requests.get(external_url).json()
+            except Exception as e:
+                print("Exception when trying to connect to an external URL '%s': %s" % (external_url, e))
+                uplink_stage = ''
+		time.sleep(10)
+                continue
+
+            if not ovpn_iface in ifaces:
+                print("OpenVPN iface '%s' not present" % (ovpn_iface))
+                uplink_stage = ''
+		time.sleep(10)
+                continue
+
+            rv = subprocess.call(['ping', '-c', str(collector_ping_count), '-w', str(collector_ping_deadline), collector_ip])
+            if rv != 0:
+                print("Collector IP '%s' is not responding" % (collector_ip))
+                uplink_state = ''
+		time.sleep(10)
+                continue
+
+            uplink_state = 'green'
+
+
+class KismetMonitor(threading.Thread):
+
+    def run(self):
+        global running
+        while running:
+            try:
+                print("Connecting to kismet server on '%s:%d'" % (kismet_server, kismet_port))
+                k = kismetclient.Client((kismet_server, kismet_port))
+
+                k.register_handler('TIME', update_time)
+                k.register_handler('GPS', update_gps_state)
+                k.register_handler('SOURCE', update_source_state)
+                # Debugging
+                k.register_handler('STATUS', log_status)
+                k.register_handler('CRITFAIL', log_critfail)
+                k.register_handler('ERROR', log_error)
+                k.register_handler('TERMINATE', log_terminate)
+                while True:
+                    k.listen()
+            except Exception as e:
+                print("Caught exception in kismet monitor thread: %s" % (e))
+                time.sleep(5)
+
+
+KismetMonitor().start()
+UplinkMonitor().start()
 
 mon.write(makepkt())
 mon.flush()
 
 watchdog = 'green'
-running = True
 while running:
 
 	watchdog = onoff_blink_next(watchdog)
 
 	purge_sources()
-	mon.write(makepkt(led2=watchdog,
-	    led3=kismet_connection_state(),
-	    led4=gps_fix,
-	    led5=sources['39ed09aa-2dcd-4eab-b460-781de88f79d6']['state'],
-	    led6=sources['e8d964d0-9409-408f-a1d7-01e841bae7ed']['state'],
-	    led7=sources['fb187219-afd4-4be8-871a-220d16fb5cb0']['state'],
-	    led8=storage_state()
-	    ))
+	try:
+		mon.write(makepkt(led2=watchdog,
+	    		led3=kismet_connection_state(),
+	    		led4=gps_fix,
+	    		led5=sources['39ed09aa-2dcd-4eab-b460-781de88f79d6']['state'],
+	    		led6=sources['e8d964d0-9409-408f-a1d7-01e841bae7ed']['state'],
+	    		led7=sources['fb187219-afd4-4be8-871a-220d16fb5cb0']['state'],
+	    		led8=storage_state(),
+        		led9=uplink_state
+	    		))
+	except IOError as e:
+		running = False
+
         mon.flush()
-        time.sleep(0.5)
+	try:
+	        time.sleep(0.5)
+	except KeyboardInterrupt:
+		running = False
 
 
 mon.write(makepkt())
