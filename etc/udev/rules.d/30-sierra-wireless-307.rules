@@ -1,0 +1,3 @@
+# Sierra Wireless 307 3G modem
+SUBSYSTEM=="tty", SUBSYSTEMS=="usb", DRIVERS=="sierra", ATTRS{bNumEndpoints}=="03", SYMLINK+="modem"
+
