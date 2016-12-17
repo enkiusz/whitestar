@@ -2,7 +2,7 @@
 
 readonly TAG=$(date -Is --utc)
 readonly BACKUP_DESTDIR=/var/log/archive
-readonly BACKUP_TARBALL="$BACKUP_DESTDIR/kismet-$TAG.tar"
+readonly BACKUP_TARBALL="$BACKUP_DESTDIR/kismet-$TAG.tar.xz"
 readonly ARCHIVE_DIRS="/var/log/kismet/whitestar*"
 
 echo "Archiving logs from '$ARCHIVE_DIRS' to '$BACKUP_TARBALL'"
@@ -37,4 +37,4 @@ get_exclude_pattern() {
 # Kill the spurious 'file changes as we read it' message on /var/log/kismet
 # Reference: http://stackoverflow.com/questions/20318852/tar-file-changed-as-we-read-it#24012292
 exclude_pattern=$(get_exclude_pattern)
-tar --remove-files --warning=no-file-changed --force-local -cf "$BACKUP_TARBALL" ${exclude_pattern:+--exclude=${exclude_pattern}} $ARCHIVE_DIRS
+tar --remove-files --warning=no-file-changed --force-local -Jcf "$BACKUP_TARBALL" ${exclude_pattern:+--exclude=${exclude_pattern}} $ARCHIVE_DIRS
