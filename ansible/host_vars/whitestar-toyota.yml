@@ -1,0 +1,30 @@
+---
+whitestar_config:
+  capture_interfaces:
+    # This is the capture device name
+    - name: alfa
+      # This is a UUID for this device in kismet
+      # Use uuidgen to generate this
+      uuid: 39ed09aa-2dcd-4eab-b460-781de88f79d6
+      # This is a UDEV device spec used to look for and detect this device, it can use any udev matching rules
+      devicespec: 'ATTR{address}=="00:c0:ca:57:10:89", ATTR{type}=="1"'
+
+    - name: sr71
+      uuid: e8d964d0-9409-408f-a1d7-01e841bae7ed
+      devicespec: 'ATTR{address}=="00:15:6d:84:1a:78", ATTR{type}=="1"'
+
+    - name: chibi
+      uuid: fb187219-afd4-4be8-871a-220d16fb5cb0
+      devicespec: 'ATTR{address}=="80:1f:02:8f:77:6c", ATTR{type}=="1", NAME="chibi"'
+
+  location_sources:
+
+    local_gps:
+      devicespec: ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", ATTRS{serial}=="0001"
+
+
+  vehicle:
+
+    obd_interface:
+      devicespec: 'ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="A6008qzE"'
+
