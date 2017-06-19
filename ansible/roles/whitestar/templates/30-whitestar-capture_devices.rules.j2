@@ -1,0 +1,4 @@
+{{ ansible_managed | comment }}
+{% for device in whitestar_config.capture_interfaces %}
+SUBSYSTEM=="net", ACTION=="add", {{ device.devicespec }}, NAME="{{ device.name }}", ENV{KISMET_UUID}="{{ device.uuid }}"
+{% endfor %}

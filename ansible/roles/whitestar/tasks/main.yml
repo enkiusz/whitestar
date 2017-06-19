@@ -1,0 +1,93 @@
+---
+- name: Set hostname
+  hostname: name="{{ inventory_hostname }}"
+
+- name: Reconfigure grub to disable console blanking
+  lineinfile:
+    path: /etc/default/grub
+    state: present
+    regexp: '^GRUB_CMDLINE_LINUX_DEFAULT='
+    line: 'GRUB_CMDLINE_LINUX_DEFAULT="quiet consoleblank=0"'
+  notify:
+    - rebuild grub config
+
+- name: Create the capture devices udev rules
+  template: src=30-whitestar-capture_devices.rules.j2 dest=/etc/udev/rules.d/30-whitestar-capture_devices.rules
+  notify:
+    - reload udev rules
+
+- name: Create the GPS device udev rules
+  template: src=30-whitestar-gps.rules.j2 dest=/etc/udev/rules.d/30-whitestar-gps.rules
+  notify:
+    - reload udev rules
+
+- name: Create the OBD-II device udev rules
+  template: src=30-whitestar-obd.rules.j2 dest=/etc/udev/rules.d/30-whitestar-obd.rules
+  when: whitestar_config.vehicle.obd_interface.devicespec is defined
+  notify:
+    - reload udev rules
+
+- name: Copy local binaries
+  copy: src="bin/{{ item }}" dest=/usr/local/bin
+  with_items:
+    - archive-kismet-data.sh
+    - kismet-add-all-sources
+    - kismet-add-source
+    - kismet-remove-source
+    - log-nmea-sentences.sh
+    - whitestar-uploader.sh
+    - whitestar-watchdog.py
+
+- name: Copy static udev rules
+  copy: src=udev/rules.d/50-kismet.rules dest=/etc/udev/rules.d
+  notify:
+    - reload udev rules
+
+- name: Update apt before installation
+  apt: update_cache=yes
+
+- name: Install packages
+  apt: state=present name="{{ item }}"
+  with_items:
+    - avahi-daemon
+    - kismet
+    - gpsd
+    - python-pip
+    - git
+
+- name: Install kismetclient module
+  pip: name="git+https://github.com/PaulMcMillan/kismetclient.git#egg=kismetclient"
+
+- name: Enable and start sshd
+  service: state=started enabled=yes name=ssh.service
+
+- name: Enable and start avahi-daemon
+  service: state=started enabled=yes name=avahi-daemon.service
+
+- name: Configure kismet log prefix
+  lineinfile:
+    path: /etc/kismet/kismet.conf
+    state: present
+    line: logprefix=/var/log/kismet
+
+- name: Configure kismet log types
+  lineinfile:
+    path: /etc/kismet/kismet.conf
+    state: present
+    regexp: '^logtypes='
+    line: logtypes=alert,netxml,gpsxml
+
+- name: Configure default log title
+  lineinfile:
+    path: /etc/kismet/kismet.conf
+    state: present
+    regexp: '^logdefault='
+    line: "logdefault={{ inventory_hostname }}"
+
+- name: Configure write interval
+  lineinfile:
+    path: /etc/kismet/kismet.conf
+    state: present
+    regexp: '^writeinterval='
+    line: writeinterval=10
+

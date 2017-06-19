@@ -1,0 +1,6 @@
+---
+- name: rebuild grub config
+  command: update-grub
+
+- name: reload udev rules
+  command: udevadm control -R

@@ -1,0 +1,4 @@
+{{ ansible_managed | comment }}
+# OBD-II cable
+SUBSYSTEM=="tty", {{ whitestar_config.vehicle.obd_interface.devicespec }}, SYMLINK+="obd"
+
