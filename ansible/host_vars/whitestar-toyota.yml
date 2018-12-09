@@ -1,4 +1,9 @@
 ---
+pxe_mac: e0:cb:4e:2e:2b:1a
+ansible_user: root
+origin_zygote: default
+power_ctrl_task: common/manual-power.yml
+
 whitestar_config:
   capture_interfaces:
     # This is the capture device name
@@ -15,7 +20,7 @@ whitestar_config:
 
     - name: chibi
       uuid: fb187219-afd4-4be8-871a-220d16fb5cb0
-      devicespec: 'ATTR{address}=="80:1f:02:8f:77:6c", ATTR{type}=="1", NAME="chibi"'
+      devicespec: 'ATTR{address}=="80:1f:02:8f:77:6c", ATTR{type}=="1"'
 
   location_sources:
 
